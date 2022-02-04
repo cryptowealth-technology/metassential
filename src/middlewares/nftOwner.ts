@@ -1,5 +1,7 @@
-
-import {BigNumber, Contract, utils, providers} from 'ethers';
+import { BigNumber } from '@ethersproject/bignumber';
+import { Contract } from '@ethersproject/contracts';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import { getAddress } from '@ethersproject/address';
 
 const ERC1155 = [
   'function balanceOf(address _owner, uint256 _id) external view returns (uint256)',
@@ -9,12 +11,11 @@ const ERC721 = [
   'function ownerOf(uint256 tokenId) external view returns (address)',
 ];
 
-
 async function ownerOf1155(
   contractAddress: string,
   tokenId: string,
   address: string,
-  mainnetProvider: providers.JsonRpcProvider
+  mainnetProvider: JsonRpcProvider,
 ): Promise<boolean> {
   const nftContract = new Contract(contractAddress, ERC1155, mainnetProvider);
   const balance = await nftContract.balanceOf(address, BigNumber.from(tokenId));
@@ -26,25 +27,21 @@ async function ownerOf721(
   contractAddress: string,
   tokenId: string,
   address: string,
-  mainnetProvider: providers.JsonRpcProvider
+  mainnetProvider: JsonRpcProvider,
 ): Promise<boolean> {
-  const nftContract = new Contract(
-    contractAddress,
-    ERC721,
-    mainnetProvider
-  );
+  const nftContract = new Contract(contractAddress, ERC721, mainnetProvider);
   const owner = await nftContract.ownerOf(BigNumber.from(tokenId));
 
-  return utils.getAddress(owner) === utils.getAddress(address);
+  return getAddress(owner) === getAddress(address);
 }
 
 async function isOwner(
   contractAddress: string,
   tokenId: string,
   address: string,
-  mainnetRpcUrl: string
+  mainnetRpcUrl: string,
 ) {
-  const mainnetProvider = new providers.JsonRpcProvider(mainnetRpcUrl);
+  const mainnetProvider = new JsonRpcProvider(mainnetRpcUrl);
 
   let _isOwner = false;
 
@@ -53,22 +50,18 @@ async function isOwner(
       contractAddress,
       tokenId,
       address,
-      mainnetProvider
+      mainnetProvider,
     );
   } catch (error) {
     _isOwner = await ownerOf1155(
       contractAddress,
       tokenId,
       address,
-      mainnetProvider
+      mainnetProvider,
     );
   }
 
   return _isOwner;
 }
 
-export {
-  isOwner,
-  ownerOf1155,
-  ownerOf721
-}
+export { isOwner, ownerOf1155, ownerOf721 };

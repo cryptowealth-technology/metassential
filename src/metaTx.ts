@@ -1,6 +1,6 @@
 import { JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
 import { Provider } from '@ethersproject/abstract-provider';
-import { Contract } from '@ethersproject/contracts'
+import { Contract } from '@ethersproject/contracts';
 import { BigNumber } from 'ethers';
 import { signMetaTxRequest } from './signer';
 
@@ -14,12 +14,12 @@ export async function sendMetaTx(
   to: string,
   walletProvider: Web3Provider | Provider,
   network: number,
-  readProvider: JsonRpcProvider,
+  _readProvider: JsonRpcProvider,
   from: string,
   forwardingContract: Contract,
   creds?: OwnershipCreds,
   onSigned?: () => void,
-): Promise<any> {
+): Promise<Response> {
   const url = process.env.AUTOTASK_URL;
 
   const request = await signMetaTxRequest(

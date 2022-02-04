@@ -1,10 +1,8 @@
 import { Contract } from '@ethersproject/contracts';
-import { JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
+import { Web3Provider } from '@ethersproject/providers';
 import ethSigUtil, { TypedMessage } from '@metamask/eth-sig-util';
 import { BigNumber } from 'ethers';
 import { Provider } from '@ethersproject/abstract-provider';
-
-import ForwardingABI from './abi/Forwarder.json'
 
 /**
  * Field in a User Defined Types
@@ -62,8 +60,8 @@ const ForwardRequest = [
 ];
 
 interface PayloadTypes {
-  EIP712Domain: EIP712Struct,
-  ForwardRequest: EIP712Struct,
+  EIP712Domain: EIP712Struct;
+  ForwardRequest: EIP712Struct;
 }
 
 function getMetaTxTypeData(
@@ -99,11 +97,14 @@ async function signTypedData(
     return ethSigUtil.signTypedData({
       privateKey,
       data: data as TypedMessage<any>,
-      version: ethSigUtil.SignTypedDataVersion.V4
+      version: ethSigUtil.SignTypedDataVersion.V4,
     });
   }
 
-  return await (signer as Web3Provider).send('eth_signTypedData_v4', [from, JSON.stringify(data)]);
+  return await (signer as Web3Provider).send('eth_signTypedData_v4', [
+    from,
+    JSON.stringify(data),
+  ]);
 }
 
 async function attachNonce(
@@ -125,9 +126,13 @@ async function signMetaTxRequest(
   signature: string;
   request: Record<string, any>;
 }> {
-  
   const request = await attachNonce(forwarder, input);
-  const toSign = getMetaTxTypeData(forwarder.address, request, chainId, forwarder.name || 'NFightGasStation');
+  const toSign = getMetaTxTypeData(
+    forwarder.address,
+    request,
+    chainId,
+    forwarder.name || 'NFightGasStation',
+  );
   const signature = await signTypedData(signer, input.from, toSign);
 
   return { signature, request };
