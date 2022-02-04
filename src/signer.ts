@@ -90,7 +90,7 @@ async function signTypedData(
   signer: Web3Provider | string | Provider,
   from: string,
   data: EIP712Payload,
-) {
+): Promise<string> {
   // If signer is a private key, use it to sign
   if (typeof signer === 'string') {
     const privateKey = Buffer.from(signer.replace(/^0x/, ''), 'hex');
@@ -127,6 +127,7 @@ async function signMetaTxRequest(
   request: Record<string, any>;
 }> {
   const request = await attachNonce(forwarder, input);
+
   const toSign = getMetaTxTypeData(
     forwarder.address,
     request,
