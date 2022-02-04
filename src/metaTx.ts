@@ -1,4 +1,6 @@
 import { JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/abstract-provider';
+import { Contract } from '@ethersproject/contracts'
 import { BigNumber } from 'ethers';
 import { signMetaTxRequest } from './signer';
 
@@ -10,11 +12,11 @@ type OwnershipCreds = {
 export async function sendMetaTx(
   data: string,
   to: string,
-  walletProvider: Web3Provider,
+  walletProvider: Web3Provider | Provider,
   network: number,
   readProvider: JsonRpcProvider,
   from: string,
-  forwardingContract: { address: string; abi: any },
+  forwardingContract: Contract,
   creds?: OwnershipCreds,
   onSigned?: () => void,
 ): Promise<any> {
@@ -23,14 +25,13 @@ export async function sendMetaTx(
   const request = await signMetaTxRequest(
     walletProvider,
     network,
-    readProvider,
     {
       to,
       from,
       data,
       creds,
     },
-    { ...forwardingContract },
+    forwardingContract,
   );
 
   if (!url) throw new Error(`Missing relayer url ${JSON.stringify(request)}`);

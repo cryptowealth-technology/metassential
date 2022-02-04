@@ -2,6 +2,9 @@ import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
 import ethSigUtil, { TypedMessage } from '@metamask/eth-sig-util';
 import { BigNumber } from 'ethers';
+import { Provider } from '@ethersproject/abstract-provider';
+
+import ForwardingABI from './abi/Forwarder.json'
 
 /**
  * Field in a User Defined Types
@@ -86,7 +89,7 @@ function getMetaTxTypeData(
 }
 
 async function signTypedData(
-  signer: Web3Provider | string,
+  signer: Web3Provider | string | Provider,
   from: string,
   data: EIP712Payload,
 ) {
@@ -100,13 +103,7 @@ async function signTypedData(
     });
   }
 
-  // Otherwise, send the signTypedData RPC call
-  // Note that hardhatvm and metamask require different EIP712 input
-  const isHardhat = data.domain.chainId == 31337;
-  const [method, argData] = isHardhat
-    ? ['eth_signTypedData', data]
-    : ['eth_signTypedData_v4', JSON.stringify(data)];
-  return await signer.send(method, [from, argData]);
+  return await (signer as Web3Provider).send('eth_signTypedData_v4', [from, JSON.stringify(data)]);
 }
 
 async function attachNonce(
@@ -120,18 +117,17 @@ async function attachNonce(
 }
 
 async function signMetaTxRequest(
-  signer: Web3Provider,
+  signer: Web3Provider | Provider,
   chainId: number,
-  readProvider: JsonRpcProvider,
   input: Record<string, any>,
-  { abi, address, name }: Record<string, any>, // fwding ABI
+  forwarder: Contract,
 ): Promise<{
   signature: string;
   request: Record<string, any>;
 }> {
-  const forwarder = new Contract(address, abi, readProvider);
+  
   const request = await attachNonce(forwarder, input);
-  const toSign = getMetaTxTypeData(forwarder.address, request, chainId, name);
+  const toSign = getMetaTxTypeData(forwarder.address, request, chainId, forwarder.name || 'NFightGasStation');
   const signature = await signTypedData(signer, input.from, toSign);
 
   return { signature, request };
