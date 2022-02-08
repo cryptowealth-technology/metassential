@@ -21,10 +21,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IAccessControl__factory>;
     getContractFactory(
-      name: "ERC2771Context",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC2771Context__factory>;
-    getContractFactory(
       name: "ERC165",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC165__factory>;
@@ -37,9 +33,13 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Counter__factory>;
     getContractFactory(
-      name: "Forwarder",
+      name: "EssentialERC2771Context",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Forwarder__factory>;
+    ): Promise<Contracts.EssentialERC2771Context__factory>;
+    getContractFactory(
+      name: "EssentialForwarder",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.EssentialForwarder__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -51,11 +51,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IAccessControl>;
-    getContractAt(
-      name: "ERC2771Context",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ERC2771Context>;
     getContractAt(
       name: "ERC165",
       address: string,
@@ -72,10 +67,15 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.Counter>;
     getContractAt(
-      name: "Forwarder",
+      name: "EssentialERC2771Context",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.Forwarder>;
+    ): Promise<Contracts.EssentialERC2771Context>;
+    getContractAt(
+      name: "EssentialForwarder",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.EssentialForwarder>;
 
     // default types
     getContractFactory(

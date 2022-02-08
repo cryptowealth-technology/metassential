@@ -5,7 +5,9 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract Forwarder is EIP712, AccessControl {
+import "hardhat/console.sol";
+
+contract EssentialForwarder is EIP712, AccessControl {
     using ECDSA for bytes32;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -24,7 +26,7 @@ contract Forwarder is EIP712, AccessControl {
 
     mapping(address => uint256) private _nonces;
 
-    constructor() EIP712("TestForwarder", "0.0.1") {
+    constructor(string memory name) EIP712(name, "0.0.1") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(ADMIN_ROLE, msg.sender);
     }
@@ -49,7 +51,7 @@ contract Forwarder is EIP712, AccessControl {
         payable
         returns (bool, bytes memory)
     {
-       return _execute(req, signature);
+       return _execute(req, signature, false);
     }
 
     function executeTrusted(ForwardRequest calldata req, bytes calldata signature)
@@ -58,19 +60,28 @@ contract Forwarder is EIP712, AccessControl {
         onlyRole(ADMIN_ROLE)
         returns (bool, bytes memory)
     {
-      return _execute(req, signature);
+      return _execute(req, signature, true);
     }
 
-    function _execute(ForwardRequest calldata req, bytes calldata signature) internal returns (bool, bytes memory) {
+    function _execute(ForwardRequest calldata req, bytes calldata signature, bool trusted) internal returns (bool, bytes memory) {
         require(verify(req, signature), "TestForwarder: signature does not match request");
         _nonces[req.from] = req.nonce + 1;
 
-        (bool success, bytes memory returndata) = req.to.call{gas: req.gas, value: req.value}(
-            abi.encodePacked(req.data, req.from)
+        ForwardRequest memory _req = ForwardRequest({
+          from: req.from,
+          to: req.to,
+          value: req.value,
+          gas: req.gas,
+          nonce: req.nonce,
+          data: req.data
+        });
+
+        (bool success, bytes memory returndata) = req.to.call{gas: _req.gas, value: _req.value}(
+            abi.encodePacked(_req.data, uint256(trusted == true ? 1 : 0), _req.from)
         );
         // Validate that the relayer has sent enough gas for the call.
         // See https://ronan.eth.link/blog/ethereum-gas-dangers/
-        assert(gasleft() > req.gas / 63);
+        assert(gasleft() > _req.gas / 63);
 
         return (success, returndata);
     }

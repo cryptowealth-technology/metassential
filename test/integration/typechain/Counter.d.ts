@@ -24,7 +24,10 @@ interface CounterInterface extends ethers.utils.Interface {
     "count(address)": FunctionFragment;
     "increment()": FunctionFragment;
     "incrementFromForwarderOnly()": FunctionFragment;
+    "isTrustedExecution()": FunctionFragment;
     "isTrustedForwarder(address)": FunctionFragment;
+    "owner()": FunctionFragment;
+    "setTrustedForwarder(address)": FunctionFragment;
   };
 
   encodeFunctionData(functionFragment: "count", values: [string]): string;
@@ -34,7 +37,16 @@ interface CounterInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "isTrustedExecution",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "isTrustedForwarder",
+    values: [string]
+  ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "setTrustedForwarder",
     values: [string]
   ): string;
 
@@ -45,7 +57,16 @@ interface CounterInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "isTrustedExecution",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "isTrustedForwarder",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setTrustedForwarder",
     data: BytesLike
   ): Result;
 
@@ -106,10 +127,19 @@ export class Counter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    isTrustedExecution(overrides?: CallOverrides): Promise<[boolean]>;
+
     isTrustedForwarder(
       forwarder: string,
       overrides?: CallOverrides
     ): Promise<[boolean]>;
+
+    owner(overrides?: CallOverrides): Promise<[string]>;
+
+    setTrustedForwarder(
+      trustedForwarder: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
 
   count(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
@@ -122,10 +152,19 @@ export class Counter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  isTrustedExecution(overrides?: CallOverrides): Promise<boolean>;
+
   isTrustedForwarder(
     forwarder: string,
     overrides?: CallOverrides
   ): Promise<boolean>;
+
+  owner(overrides?: CallOverrides): Promise<string>;
+
+  setTrustedForwarder(
+    trustedForwarder: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   callStatic: {
     count(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
@@ -134,10 +173,19 @@ export class Counter extends BaseContract {
 
     incrementFromForwarderOnly(overrides?: CallOverrides): Promise<void>;
 
+    isTrustedExecution(overrides?: CallOverrides): Promise<boolean>;
+
     isTrustedForwarder(
       forwarder: string,
       overrides?: CallOverrides
     ): Promise<boolean>;
+
+    owner(overrides?: CallOverrides): Promise<string>;
+
+    setTrustedForwarder(
+      trustedForwarder: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {};
@@ -153,9 +201,18 @@ export class Counter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    isTrustedExecution(overrides?: CallOverrides): Promise<BigNumber>;
+
     isTrustedForwarder(
       forwarder: string,
       overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setTrustedForwarder(
+      trustedForwarder: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
@@ -173,9 +230,20 @@ export class Counter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    isTrustedExecution(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     isTrustedForwarder(
       forwarder: string,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    setTrustedForwarder(
+      trustedForwarder: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
 }

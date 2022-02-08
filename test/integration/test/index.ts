@@ -2,11 +2,13 @@ import { expect } from 'chai';
 import { Contract } from 'ethers';
 import { ethers } from 'hardhat';
 import { setupUsers } from './utils';
-import { signMetaTxRequest } from '../../../src/index';
+import { wrapContract } from '../../../src/index';
+
+const NAME = 'TestForwarder';
 
 const deployContracts = async () => {
-  const Forwarder = await ethers.getContractFactory('Forwarder');
-  const forwarder = await Forwarder.deploy();
+  const Forwarder = await ethers.getContractFactory('EssentialForwarder');
+  const forwarder = await Forwarder.deploy(NAME);
   await forwarder.deployed();
 
   const Counter = await ethers.getContractFactory('Counter');
@@ -15,13 +17,26 @@ const deployContracts = async () => {
 
   const signers = await ethers.getSigners();
 
-  const users = await setupUsers(
+  const users = (await setupUsers(
     signers.map((signer) => signer.address),
     {
       counter,
       forwarder,
     },
-  );
+  )) as any[];
+
+  users.map((user) => {
+    const { address, counter, forwarder } = user;
+
+    const wrappedCounter = wrapContract(
+      counter.provider,
+      address,
+      counter,
+      Object.assign(forwarder, { name: NAME }),
+    ) as Contract;
+
+    user.wrappedCounter = wrappedCounter;
+  });
 
   return {
     counter,
@@ -39,6 +54,7 @@ describe('Counter', function () {
     } & {
       counter: Contract;
       forwarder: Contract;
+      wrappedCounter: Contract;
     })[];
   };
 
@@ -74,24 +90,10 @@ describe('Counter', function () {
     it('increments with forwarder and trusted relayer', async function () {
       const {
         counter,
-        forwarder,
         users: [relayer, account],
       } = fixtures;
 
-      const data = counter.interface.encodeFunctionData('increment', []);
-
-      const _forwarder = Object.assign(forwarder, { name: 'TestForwarder' });
-
-      const { signature, request } = await signMetaTxRequest(
-        account.counter.provider,
-        31337,
-        {
-          to: counter.address,
-          from: account.address,
-          data,
-        },
-        _forwarder,
-      );
+      const { signature, request } = await account.wrappedCounter.increment();
 
       const tx = await relayer.forwarder.executeTrusted(request, signature);
       await tx.wait();
@@ -102,24 +104,10 @@ describe('Counter', function () {
     it('increments with forwarder and permissionless relayer', async function () {
       const {
         counter,
-        forwarder,
         users: [relayer, account],
       } = fixtures;
 
-      const data = counter.interface.encodeFunctionData('increment', []);
-
-      const _forwarder = Object.assign(forwarder, { name: 'TestForwarder' });
-
-      const { signature, request } = await signMetaTxRequest(
-        account.counter.provider,
-        31337,
-        {
-          to: counter.address,
-          from: account.address,
-          data,
-        },
-        _forwarder,
-      );
+      const { signature, request } = await account.wrappedCounter.increment();
 
       const tx = await relayer.forwarder.execute(request, signature);
       await tx.wait();
@@ -138,71 +126,46 @@ describe('Counter', function () {
         users: [_relayer, account],
       } = fixtures;
 
-      expect(account.counter.incrementFromForwarderOnly()).to.be.revertedWith(
-        '429',
-      );
+      await expect(
+        account.counter.incrementFromForwarderOnly(),
+      ).to.be.revertedWith('429');
+    });
+
+    it('does not increment with forwarder and permissionless relayer', async function () {
+      const {
+        counter,
+        users: [relayer, account],
+      } = fixtures;
+
+      const { signature, request } =
+        await account.wrappedCounter.incrementFromForwarderOnly();
+
+      // this should probably revert?
+      // await expect(
+      //   const tx = await relayer.forwarder.execute(request, signature);
+      // ).to.be.revertedWith('429');
+
+      const tx = await relayer.forwarder.execute(request, signature);
+
+      await tx.wait();
+
+      const count = await counter.count(account.address);
+      expect(count).to.equal(0);
     });
 
     it('increments with forwarder and trusted relayer', async function () {
       const {
         counter,
-        forwarder,
         users: [relayer, account],
       } = fixtures;
 
-      const data = counter.interface.encodeFunctionData(
-        'incrementFromForwarderOnly',
-        [],
-      );
-
-      const _forwarder = Object.assign(forwarder, { name: 'TestForwarder' });
-
-      const { signature, request } = await signMetaTxRequest(
-        account.counter.provider,
-        31337,
-        {
-          to: counter.address,
-          from: account.address,
-          data,
-        },
-        _forwarder,
-      );
+      const { signature, request } =
+        await account.wrappedCounter.incrementFromForwarderOnly();
 
       const tx = await relayer.forwarder.executeTrusted(request, signature);
       await tx.wait();
-
-      expect(await counter.count(account.address)).to.equal(1);
-    });
-
-    it('increments with forwarder and permissionless relayer', async function () {
-      const {
-        counter,
-        forwarder,
-        users: [relayer, account],
-      } = fixtures;
-
-      const data = counter.interface.encodeFunctionData(
-        'incrementFromForwarderOnly',
-        [],
-      );
-
-      const _forwarder = Object.assign(forwarder, { name: 'TestForwarder' });
-
-      const { signature, request } = await signMetaTxRequest(
-        account.counter.provider,
-        31337,
-        {
-          to: counter.address,
-          from: account.address,
-          data,
-        },
-        _forwarder,
-      );
-
-      const tx = await relayer.forwarder.execute(request, signature);
-      await tx.wait();
-
-      expect(await counter.count(account.address)).to.equal(2);
+      const count = await counter.count(account.address);
+      expect(count).to.equal(1);
     });
   });
 });
