@@ -67,7 +67,12 @@ async function durinCall({ callData, to, abi }, _opt, callback) {
   const { from, nonce, nftContract, tokenId } = decodeCalldata(callData);
 
   // lookup current owner on mainnet
-  const owner = await fetchCurrentOwner(nftContract, tokenId);
+  let owner: string;
+  try {
+    owner = await fetchCurrentOwner(nftContract, tokenId);
+  } catch {
+    return callback(new rpc.Error.InternalError());
+  }
 
   // return an error if the current owner does not match the from address
   if (utils.getAddress(owner) !== utils.getAddress(from)) {
