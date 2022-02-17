@@ -32,14 +32,14 @@ abstract contract EssentialERC2771Context is Context {
     }
 
     function isTrustedExecution() public view virtual returns (bool) {
-        uint256 trusted;
+        uint8 trusted;
         assembly {
             trusted := calldataload(sub(calldatasize(), 52)) // 20 for address, 32 for uint256
         }
 
         // (bytes memory _data, uint8 trusted, address _from) = abi.decode(msg.data, (bytes, uint8, address));
         console.log(trusted);
-        return trusted == uint8(1);
+        return trusted == uint256(1);
     }
 
     function _msgSender() internal view virtual override returns (address sender) {

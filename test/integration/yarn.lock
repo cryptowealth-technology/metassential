@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@0xessential/metassential@file:../../":
+"@0xessential/metassential@file:../..":
   version "0.0.1"
   dependencies:
     "@metamask/eth-sig-util" "^4.0.0"

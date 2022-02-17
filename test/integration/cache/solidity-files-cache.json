@@ -75,8 +75,8 @@
       ]
     },
     "/Users/samuelsbauch/Code/metatransactions/test/integration/contracts/EssentialERC2771Context.sol": {
-      "lastModificationDate": 1644334912109,
-      "contentHash": "49d14742037251b49d318b8cf097f68e",
+      "lastModificationDate": 1644376471755,
+      "contentHash": "59c2e5b5e5eebdc2b3976c821dd9c8d7",
       "sourceName": "contracts/EssentialERC2771Context.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -148,8 +148,8 @@
       ]
     },
     "/Users/samuelsbauch/Code/metatransactions/test/integration/contracts/Forwarder.sol": {
-      "lastModificationDate": 1644334918002,
-      "contentHash": "055bc0a431c6941fb26072438af599fe",
+      "lastModificationDate": 1644952842940,
+      "contentHash": "96d33e3cd495631b2c8f9bff062f24ca",
       "sourceName": "contracts/Forwarder.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -178,6 +178,8 @@
         "@openzeppelin/contracts/access/AccessControl.sol",
         "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
         "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol",
+        "./SignedAllowance.sol",
+        "./IForwardRequest.sol",
         "hardhat/console.sol"
       ],
       "versionPragmas": [
@@ -441,6 +443,79 @@
       ],
       "artifacts": [
         "IERC165"
+      ]
+    },
+    "/Users/samuelsbauch/Code/metatransactions/test/integration/contracts/SignedAllowance.sol": {
+      "lastModificationDate": 1644894355144,
+      "contentHash": "2b723a3da3681fb44748e164b44c37e8",
+      "sourceName": "contracts/SignedAllowance.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+        "./IForwardRequest.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.4"
+      ],
+      "artifacts": [
+        "SignedAllowance"
+      ]
+    },
+    "/Users/samuelsbauch/Code/metatransactions/test/integration/contracts/IForwardRequest.sol": {
+      "lastModificationDate": 1644893456587,
+      "contentHash": "215faca0666ce9656584805d0c6483a5",
+      "sourceName": "contracts/IForwardRequest.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.4"
+      ],
+      "artifacts": [
+        "IForwardRequest"
       ]
     }
   }

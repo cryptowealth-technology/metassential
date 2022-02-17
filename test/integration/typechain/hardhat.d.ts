@@ -40,6 +40,10 @@ declare module "hardhat/types/runtime" {
       name: "EssentialForwarder",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.EssentialForwarder__factory>;
+    getContractFactory(
+      name: "SignedAllowance",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SignedAllowance__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -76,6 +80,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.EssentialForwarder>;
+    getContractAt(
+      name: "SignedAllowance",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SignedAllowance>;
 
     // default types
     getContractFactory(
