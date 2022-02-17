@@ -1,9 +1,8 @@
 import { expect } from 'chai';
-import { BigNumber, Contract, providers } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 import { ethers } from 'hardhat';
 import { setupUsers } from './utils';
 import { wrapContract } from '../../../src/index';
-import { Logger } from 'ethers/lib/utils';
 
 const NAME = 'TestForwarder';
 

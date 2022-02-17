@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "format": "prettier --config .prettierrc 'src/**/*.ts' --write",
-    "lint": "eslint '**/*.ts' --fix"
+    "lint": "eslint '**/*.ts' --fix",
+    "start": "ts-node server.ts"
   },
   "devDependencies": {
     "@types/node": "^17.0.14",
