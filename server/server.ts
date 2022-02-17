@@ -87,4 +87,4 @@ async function durinCall({ callData, to, abi }, _opt, callback) {
 }
 
 server.expose('durin_call', durinCall);
-server.listen(8000, 'localhost');
+server.listen(process.env.PORT, 'localhost');
