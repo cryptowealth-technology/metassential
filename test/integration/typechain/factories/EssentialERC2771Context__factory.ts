@@ -11,19 +11,6 @@ import type {
 
 const _abi = [
   {
-    inputs: [],
-    name: "isTrustedExecution",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "address",

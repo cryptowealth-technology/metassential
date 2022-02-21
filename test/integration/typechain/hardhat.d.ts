@@ -41,9 +41,9 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.EssentialForwarder__factory>;
     getContractFactory(
-      name: "SignedAllowance",
+      name: "SignedOwnershipProof",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.SignedAllowance__factory>;
+    ): Promise<Contracts.SignedOwnershipProof__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -81,10 +81,10 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.EssentialForwarder>;
     getContractAt(
-      name: "SignedAllowance",
+      name: "SignedOwnershipProof",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.SignedAllowance>;
+    ): Promise<Contracts.SignedOwnershipProof>;
 
     // default types
     getContractFactory(

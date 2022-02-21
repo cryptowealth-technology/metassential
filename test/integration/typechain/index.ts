@@ -8,7 +8,7 @@ export type { IERC165 } from "./IERC165";
 export type { Counter } from "./Counter";
 export type { EssentialERC2771Context } from "./EssentialERC2771Context";
 export type { EssentialForwarder } from "./EssentialForwarder";
-export type { SignedAllowance } from "./SignedAllowance";
+export type { SignedOwnershipProof } from "./SignedOwnershipProof";
 
 export { AccessControl__factory } from "./factories/AccessControl__factory";
 export { IAccessControl__factory } from "./factories/IAccessControl__factory";
@@ -17,4 +17,4 @@ export { IERC165__factory } from "./factories/IERC165__factory";
 export { Counter__factory } from "./factories/Counter__factory";
 export { EssentialERC2771Context__factory } from "./factories/EssentialERC2771Context__factory";
 export { EssentialForwarder__factory } from "./factories/EssentialForwarder__factory";
-export { SignedAllowance__factory } from "./factories/SignedAllowance__factory";
+export { SignedOwnershipProof__factory } from "./factories/SignedOwnershipProof__factory";

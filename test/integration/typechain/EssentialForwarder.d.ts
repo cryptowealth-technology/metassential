@@ -25,20 +25,19 @@ interface EssentialForwarderInterface extends ethers.utils.Interface {
     "ADMIN_ROLE()": FunctionFragment;
     "DEFAULT_ADMIN_ROLE()": FunctionFragment;
     "createMessage(address,uint256,address,uint256)": FunctionFragment;
-    "execute((address,address,address,uint256,uint256,uint256,uint256,bytes),bytes)": FunctionFragment;
-    "executeWithProof((address,address,address,uint256,uint256,uint256,uint256,bytes),bytes,bytes)": FunctionFragment;
+    "createSession(address,uint256)": FunctionFragment;
+    "executeWithProof(bytes,bytes)": FunctionFragment;
     "getNonce(address)": FunctionFragment;
     "getRoleAdmin(bytes32)": FunctionFragment;
     "grantRole(bytes32,address)": FunctionFragment;
     "hasRole(bytes32,address)": FunctionFragment;
+    "invalidateSession()": FunctionFragment;
     "ownershipSigner()": FunctionFragment;
-    "preflight((address,address,address,uint256,uint256,uint256,uint256,bytes),bytes)": FunctionFragment;
+    "preflight((address,address,address,address,uint256,uint256,uint256,uint256,bytes),bytes)": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
     "revokeRole(bytes32,address)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
-    "usedAllowances(bytes32)": FunctionFragment;
-    "validateOwnershipProof((address,address,address,uint256,uint256,uint256,uint256,bytes),bytes)": FunctionFragment;
-    "verify((address,address,address,uint256,uint256,uint256,uint256,bytes),bytes)": FunctionFragment;
+    "verifyOwnershipProof((address,address,address,address,uint256,uint256,uint256,uint256,bytes),bytes)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -54,37 +53,12 @@ interface EssentialForwarderInterface extends ethers.utils.Interface {
     values: [string, BigNumberish, string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "execute",
-    values: [
-      {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      BytesLike
-    ]
+    functionFragment: "createSession",
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "executeWithProof",
-    values: [
-      {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      BytesLike,
-      BytesLike
-    ]
+    values: [BytesLike, BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "getNonce", values: [string]): string;
   encodeFunctionData(
@@ -100,6 +74,10 @@ interface EssentialForwarderInterface extends ethers.utils.Interface {
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
+    functionFragment: "invalidateSession",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "ownershipSigner",
     values?: undefined
   ): string;
@@ -108,6 +86,7 @@ interface EssentialForwarderInterface extends ethers.utils.Interface {
     values: [
       {
         from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -132,30 +111,11 @@ interface EssentialForwarderInterface extends ethers.utils.Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "usedAllowances",
-    values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "validateOwnershipProof",
+    functionFragment: "verifyOwnershipProof",
     values: [
       {
         from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      BytesLike
-    ]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "verify",
-    values: [
-      {
-        from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -177,7 +137,10 @@ interface EssentialForwarderInterface extends ethers.utils.Interface {
     functionFragment: "createMessage",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "execute", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "createSession",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "executeWithProof",
     data: BytesLike
@@ -189,6 +152,10 @@ interface EssentialForwarderInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "invalidateSession",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "ownershipSigner",
     data: BytesLike
@@ -204,24 +171,21 @@ interface EssentialForwarderInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "usedAllowances",
+    functionFragment: "verifyOwnershipProof",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "validateOwnershipProof",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
 
   events: {
     "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
     "RoleGranted(bytes32,address,address)": EventFragment;
     "RoleRevoked(bytes32,address,address)": EventFragment;
+    "Session(address,address,uint256)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Session"): EventFragment;
 }
 
 export type RoleAdminChangedEvent = TypedEvent<
@@ -238,6 +202,14 @@ export type RoleGrantedEvent = TypedEvent<
 
 export type RoleRevokedEvent = TypedEvent<
   [string, string, string] & { role: string; account: string; sender: string }
+>;
+
+export type SessionEvent = TypedEvent<
+  [string, string, BigNumber] & {
+    owner: string;
+    authorized: string;
+    length: BigNumber;
+  }
 >;
 
 export class EssentialForwarder extends BaseContract {
@@ -296,34 +268,15 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[string]>;
 
-    execute(
-      req: {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    createSession(
+      authorized: string,
+      length: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     executeWithProof(
-      req: {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      proof: BytesLike,
+      response: BytesLike,
+      extraData: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -343,11 +296,16 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean]>;
 
+    invalidateSession(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     ownershipSigner(overrides?: CallOverrides): Promise<[string]>;
 
     preflight(
       req: {
         from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -377,29 +335,10 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean]>;
 
-    usedAllowances(
-      arg0: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
-
-    validateOwnershipProof(
+    verifyOwnershipProof(
       req: {
         from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[string]>;
-
-    verify(
-      req: {
-        from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -425,34 +364,15 @@ export class EssentialForwarder extends BaseContract {
     overrides?: CallOverrides
   ): Promise<string>;
 
-  execute(
-    req: {
-      from: string;
-      to: string;
-      nftContract: string;
-      tokenId: BigNumberish;
-      value: BigNumberish;
-      gas: BigNumberish;
-      nonce: BigNumberish;
-      data: BytesLike;
-    },
-    signature: BytesLike,
-    overrides?: PayableOverrides & { from?: string | Promise<string> }
+  createSession(
+    authorized: string,
+    length: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   executeWithProof(
-    req: {
-      from: string;
-      to: string;
-      nftContract: string;
-      tokenId: BigNumberish;
-      value: BigNumberish;
-      gas: BigNumberish;
-      nonce: BigNumberish;
-      data: BytesLike;
-    },
-    signature: BytesLike,
-    proof: BytesLike,
+    response: BytesLike,
+    extraData: BytesLike,
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -472,11 +392,16 @@ export class EssentialForwarder extends BaseContract {
     overrides?: CallOverrides
   ): Promise<boolean>;
 
+  invalidateSession(
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   ownershipSigner(overrides?: CallOverrides): Promise<string>;
 
   preflight(
     req: {
       from: string;
+      authorizer: string;
       to: string;
       nftContract: string;
       tokenId: BigNumberish;
@@ -506,26 +431,10 @@ export class EssentialForwarder extends BaseContract {
     overrides?: CallOverrides
   ): Promise<boolean>;
 
-  usedAllowances(arg0: BytesLike, overrides?: CallOverrides): Promise<boolean>;
-
-  validateOwnershipProof(
+  verifyOwnershipProof(
     req: {
       from: string;
-      to: string;
-      nftContract: string;
-      tokenId: BigNumberish;
-      value: BigNumberish;
-      gas: BigNumberish;
-      nonce: BigNumberish;
-      data: BytesLike;
-    },
-    signature: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<string>;
-
-  verify(
-    req: {
-      from: string;
+      authorizer: string;
       to: string;
       nftContract: string;
       tokenId: BigNumberish;
@@ -551,34 +460,15 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<string>;
 
-    execute(
-      req: {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
+    createSession(
+      authorized: string,
+      length: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<[boolean, string]>;
+    ): Promise<void>;
 
     executeWithProof(
-      req: {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      proof: BytesLike,
+      response: BytesLike,
+      extraData: BytesLike,
       overrides?: CallOverrides
     ): Promise<[boolean, string]>;
 
@@ -598,11 +488,14 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
+    invalidateSession(overrides?: CallOverrides): Promise<void>;
+
     ownershipSigner(overrides?: CallOverrides): Promise<string>;
 
     preflight(
       req: {
         from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -632,29 +525,10 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    usedAllowances(
-      arg0: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
-
-    validateOwnershipProof(
+    verifyOwnershipProof(
       req: {
         from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<string>;
-
-    verify(
-      req: {
-        from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -722,6 +596,24 @@ export class EssentialForwarder extends BaseContract {
       [string, string, string],
       { role: string; account: string; sender: string }
     >;
+
+    "Session(address,address,uint256)"(
+      owner?: string | null,
+      authorized?: string | null,
+      length?: BigNumberish | null
+    ): TypedEventFilter<
+      [string, string, BigNumber],
+      { owner: string; authorized: string; length: BigNumber }
+    >;
+
+    Session(
+      owner?: string | null,
+      authorized?: string | null,
+      length?: BigNumberish | null
+    ): TypedEventFilter<
+      [string, string, BigNumber],
+      { owner: string; authorized: string; length: BigNumber }
+    >;
   };
 
   estimateGas: {
@@ -737,34 +629,15 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    execute(
-      req: {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    createSession(
+      authorized: string,
+      length: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     executeWithProof(
-      req: {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      proof: BytesLike,
+      response: BytesLike,
+      extraData: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -787,11 +660,16 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    invalidateSession(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     ownershipSigner(overrides?: CallOverrides): Promise<BigNumber>;
 
     preflight(
       req: {
         from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -821,29 +699,10 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    usedAllowances(
-      arg0: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    validateOwnershipProof(
+    verifyOwnershipProof(
       req: {
         from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    verify(
-      req: {
-        from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -872,34 +731,15 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    execute(
-      req: {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    createSession(
+      authorized: string,
+      length: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     executeWithProof(
-      req: {
-        from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      proof: BytesLike,
+      response: BytesLike,
+      extraData: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -925,11 +765,16 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    invalidateSession(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     ownershipSigner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     preflight(
       req: {
         from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;
@@ -959,29 +804,10 @@ export class EssentialForwarder extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    usedAllowances(
-      arg0: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    validateOwnershipProof(
+    verifyOwnershipProof(
       req: {
         from: string;
-        to: string;
-        nftContract: string;
-        tokenId: BigNumberish;
-        value: BigNumberish;
-        gas: BigNumberish;
-        nonce: BigNumberish;
-        data: BytesLike;
-      },
-      signature: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    verify(
-      req: {
-        from: string;
+        authorizer: string;
         to: string;
         nftContract: string;
         tokenId: BigNumberish;

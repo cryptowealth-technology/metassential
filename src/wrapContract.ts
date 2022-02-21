@@ -15,7 +15,10 @@ const wrapContract = (
         ...funcs,
         [_func.name]: async (...args: (string | number)[]) => {
           if (_func.stateMutability === 'nonpayable') {
-            const [nftContract, tokenId] = args.splice(args.length - 2, 2);
+            const [nftContract, tokenId, authorizer] = args.splice(
+              args.length - 3,
+              3,
+            );
 
             const data = implementationContract.interface.encodeFunctionData(
               _func.name,
@@ -31,6 +34,7 @@ const wrapContract = (
                 data,
                 nftContract,
                 tokenId,
+                authorizer,
               },
               forwarder,
             );

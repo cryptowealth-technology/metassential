@@ -8,9 +8,22 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "./SignedOwnershipProof.sol";
 import './IForwardRequest.sol';
 
+/// @title EssentialForwarder
+/// @author 0xEssential
+/// @notice EIP-2771 based MetaTransaction Forwarding Contract with EIP-3668 OffchainLookup for cross-chain token gating
+/// @dev Allows a Relayer to submit meta-transactions that utilize an NFT (i.e. in a game) on behalf of EOAs. Transactions
+///      are only executed if the Relayer provides a signature from a trusted 0xEssential signer. The signature must include
+///      the current owner of the Layer 1 NFT being used, or an authorized Burner EOA if the owner has authorized the Burner
+///      to use its NFTs by creating a PlaySession on this contract.
+///
+///      EssentialForwarder can be used to build Layer 2 games that use Layer 1 NFTs without bridging and with superior UX.
+///      End users can specify a Burner EOA from their primary EOA, and then use that burner address to play games.
+///      The Burner EOA can then sign messages for game moves without user interaction without any risk to the NFTs or other
+///      assets owned by the primary EOA.
 contract EssentialForwarder is EIP712, AccessControl, SignedOwnershipProof {
     using ECDSA for bytes32;
 
+    event Session(address indexed owner, address indexed authorized, uint256 indexed length);
     error OffchainLookup(address sender, string[1] urls, bytes callData, bytes4 callbackFunction, bytes extraData);
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -25,79 +38,102 @@ contract EssentialForwarder is EIP712, AccessControl, SignedOwnershipProof {
         _setupRole(ADMIN_ROLE, msg.sender);
         _setOwnershipSigner(msg.sender);
     }
-
+    
+    /// @notice Get current nonce for EOA
     function getNonce(address from) public view returns (uint256) {
         return _nonces[from];
     }
 
-    function verify(IForwardRequest.ForwardRequest calldata req, bytes calldata signature)
-        public
-        view
-        returns (bool)
-    {
-        address signer = _hashTypedDataV4(
-            keccak256(abi.encode(_TYPEHASH, req.from, req.to, req.value, req.gas, req.nonce, keccak256(req.data)))
-        ).recover(signature);
-        return _nonces[req.from] == req.nonce && signer == req.from;
+    /// @notice Allow `authorized` to use your NFTs in a game for `length` seconds. Your NFTs
+    ///         will not be transferred or approved for transfer.
+    function createSession(address authorized, uint256 length) external {
+        _sessions[msg.sender] = IForwardRequest.PlaySession({
+            authorized: authorized,
+            expiresAt: block.timestamp + length
+        });
+
+        emit Session(msg.sender, authorized, length);
     }
 
+    /// @notice Stop allowing your current authorized burner address to use your NFTs.
+    /// @dev For efficiency in PlaySession persistence and lookup, an EOA must authorize
+    ///      itself 
+    function invalidateSession() external {
+        this.createSession(msg.sender, type(uint256).max);
+    }
+
+    /// @notice Submit a meta-tx request and signature to check validity and receive
+    ///         a response with data useful for fetching a trusted proof per EIP-3668.
+    /// @dev Per EIP-3668, a valid signature will cause a revert with useful error params.
     function preflight(IForwardRequest.ForwardRequest calldata req, bytes calldata signature)
         public
         view
     {
-        if (verify(req, signature)) {
+        // If the signature is valid for the request and state, the client will receive
+        // the OffchainLookup error with parameters suitable for an https call to a JSON
+        // RPC server. 
+        
+        if (verifyRequest(req, signature)) {
             revert OffchainLookup(
                 address(this),
                 ["https://mid.nfight.xyz"],
                 abi.encode(req.from, _nonces[req.from], req.nftContract, req.tokenId),
                 this.executeWithProof.selector,
-                signature
+                abi.encode(req, signature)
             );
         }
     }
 
-    function execute(IForwardRequest.ForwardRequest calldata req, bytes calldata signature)
-        public
+    /// @notice Re-submit a valid meta-tx request with trusted proof to execute the transaction.
+    /// @dev The RPC call and re-submission should be handled by your Relayer client
+    /// @param response The unaltered bytes reponse from a call made to an RPC based on OffchainLookup args
+    /// @param extraData The unaltered bytes in the OffchainLookup extraData error arg
+    function executeWithProof(bytes calldata response, bytes calldata extraData)
+        external
         payable
         returns (bool, bytes memory)
     {
-       return _execute(req, signature, false);
-    }
-
-    function executeWithProof(IForwardRequest.ForwardRequest calldata req, bytes calldata signature, bytes calldata proof)
-        public
-        payable
-        onlyRole(ADMIN_ROLE)
-        returns (bool, bytes memory)
-    {
-        validateOwnershipProof(req, proof);
-        return _execute(req, signature, true);
-    }
-
-    function _execute(IForwardRequest.ForwardRequest calldata req, bytes calldata signature, bool trusted) internal returns (bool, bytes memory) {
-        require(verify(req, signature), "TestForwarder: signature does not match request");
+        (IForwardRequest.ForwardRequest memory req, bytes memory signature) = abi.decode(
+            extraData, (IForwardRequest.ForwardRequest, bytes)
+        );
+        
+        require(verifyOwnershipProof(req, response), "TestForwarder: ownership proof does not match request");
+        require(verifyRequest(req, signature), "TestForwarder: signature does not match request");
+        
         _nonces[req.from] = req.nonce + 1;
 
-        IForwardRequest.ForwardRequest memory _req = IForwardRequest.ForwardRequest({
-          from: req.from,
-          to: req.to,
-          value: req.value,
-          gas: req.gas,
-          nonce: req.nonce,
-          data: req.data,
-          nftContract: req.nftContract, 
-          tokenId: req.tokenId
-        });
+        (bool success, bytes memory returndata) = req.to.call{gas: req.gas, value: 0}(
+            abi.encodePacked(req.data, req.authorizer) 
+            // TODO: who should this be on behalf of? 
+            // the second argument here will be _msgSender() on implementation contract
+            // we want any game achievements / ERC20 rewards to accrue to the primary
+            // EOA rather than the burner, so Primary EOA feels easiest? 
 
-        (bool success, bytes memory returndata) = req.to.call{gas: _req.gas, value: _req.value}(
-            abi.encodePacked(_req.data, uint256(trusted == true ? 1 : 0), _req.from)
+            // This _probably_ violates the spec. Not like anyone can stop us!
+            // Let's just remain cognizant of risk profile and ability to show
+            // validity of the request - if we pass BurnerPrimary EOA as,
+            // _msgSender we should be able to show historically whic Burner EOA 
+            // actually signed those txs and that they were signed during a 
+            // period when the Burner was authorized to use the Primary EOA's NFTs
         );
 
         // Validate that the relayer has sent enough gas for the call.
         // See https://ronan.eth.link/blog/ethereum-gas-dangers/
-        assert(gasleft() > _req.gas / 63);
+        assert(gasleft() > req.gas / 63);
 
-        return (success, returndata);
+        return (success, returndata);    
+    }
+
+
+    function verifyRequest(IForwardRequest.ForwardRequest memory req, bytes memory signature)
+        internal
+        view
+        returns (bool)
+    {
+        address signer = _hashTypedDataV4(
+            keccak256(abi.encode(_TYPEHASH, req.from, req.to, 0, req.gas, req.nonce, keccak256(req.data)))
+        ).recover(signature);
+        return _nonces[req.from] == req.nonce && signer == req.from;
     }
 
 }

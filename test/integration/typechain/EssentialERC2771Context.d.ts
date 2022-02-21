@@ -21,16 +21,11 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface EssentialERC2771ContextInterface extends ethers.utils.Interface {
   functions: {
-    "isTrustedExecution()": FunctionFragment;
     "isTrustedForwarder(address)": FunctionFragment;
     "owner()": FunctionFragment;
     "setTrustedForwarder(address)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "isTrustedExecution",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "isTrustedForwarder",
     values: [string]
@@ -41,10 +36,6 @@ interface EssentialERC2771ContextInterface extends ethers.utils.Interface {
     values: [string]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "isTrustedExecution",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "isTrustedForwarder",
     data: BytesLike
@@ -102,8 +93,6 @@ export class EssentialERC2771Context extends BaseContract {
   interface: EssentialERC2771ContextInterface;
 
   functions: {
-    isTrustedExecution(overrides?: CallOverrides): Promise<[boolean]>;
-
     isTrustedForwarder(
       forwarder: string,
       overrides?: CallOverrides
@@ -116,8 +105,6 @@ export class EssentialERC2771Context extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
-
-  isTrustedExecution(overrides?: CallOverrides): Promise<boolean>;
 
   isTrustedForwarder(
     forwarder: string,
@@ -132,8 +119,6 @@ export class EssentialERC2771Context extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    isTrustedExecution(overrides?: CallOverrides): Promise<boolean>;
-
     isTrustedForwarder(
       forwarder: string,
       overrides?: CallOverrides
@@ -150,8 +135,6 @@ export class EssentialERC2771Context extends BaseContract {
   filters: {};
 
   estimateGas: {
-    isTrustedExecution(overrides?: CallOverrides): Promise<BigNumber>;
-
     isTrustedForwarder(
       forwarder: string,
       overrides?: CallOverrides
@@ -166,10 +149,6 @@ export class EssentialERC2771Context extends BaseContract {
   };
 
   populateTransaction: {
-    isTrustedExecution(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     isTrustedForwarder(
       forwarder: string,
       overrides?: CallOverrides

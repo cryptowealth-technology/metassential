@@ -1,0 +1,3 @@
+{
+  "solidity.packageDefaultDependenciesDirectory": "test/integration/node_modules"
+}

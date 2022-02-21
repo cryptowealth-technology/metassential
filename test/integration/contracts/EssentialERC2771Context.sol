@@ -4,7 +4,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Context.sol";
-import "hardhat/console.sol";
 
 /**
  * @dev Context variant with ERC2771 support.
@@ -29,17 +28,6 @@ abstract contract EssentialERC2771Context is Context {
 
     function isTrustedForwarder(address forwarder) public view virtual returns (bool) {
         return forwarder == _trustedForwarder;
-    }
-
-    function isTrustedExecution() public view virtual returns (bool) {
-        uint8 trusted;
-        assembly {
-            trusted := calldataload(sub(calldatasize(), 52)) // 20 for address, 32 for uint256
-        }
-
-        // (bytes memory _data, uint8 trusted, address _from) = abi.decode(msg.data, (bytes, uint8, address));
-        console.log(trusted);
-        return trusted == uint256(1);
     }
 
     function _msgSender() internal view virtual override returns (address sender) {
