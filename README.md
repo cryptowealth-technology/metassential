@@ -6,16 +6,19 @@
 
 0xEssential offers a standards-based and permissionless approach to gating L2 transactions with L1 token ownership. Our solution uses EIP-2771 compliant meta-transactions through a Forwarding contract combined with EIP-3668 CCIP Read for offchain (or cross-chain) lookup against a JSON RPC server.
 
+Our approach also introduces a lightweight way to authorize alternative addresses to perform token-gated actions for NFTs owned by an end user. This can be useful for improving UX - a hardware wallet user can authorize a "burner" EOA to use the NFTs owned by that vault address, without transferring the NFT or giving on-chain transfer approval, and without having to use the hardware wallet to constantly verify signed messages for a game. Your experience can even create throwaway burner wallets that sign meta-transactions without user intervention
+
 The high level flow works like this:
 
-1. A user signs structured data to perform a transaction on their behalf
-2. The signature is submitted over https to a Relayer
-3. The Relayer verifies the signature against a Forwarding Contract
-4. If the meta-tx signature is valid, the Forwarding Contract reverts with an `OffchainLookup` error
-5. The Relayer catches this error, and uses the error params to submit a request to a JSON RPC
-6. The JSON RPC looks up the current L1 ownership for the requested NFT, and returns a signed message proof encoding that data
-7. The Relayer receives the proof, and submits a transaction to the Forwarding Contract with the proof and initial meta-tx signature
-8. The Forwarding Contract executes the meta-tx only if the current NFT owner encoded in the proof matches the meta-tx signer
+1. A user submits a transaction to specify an authorized address and duration for a gate session - it may be their own address or a burner or a friend's address
+2. The authorized EOA signs EIP-2771 structured request data via your dapp to perform a transaction on their / the authorizing EOA's behalf
+3. The signature and structured request data is submitted over https to a Relayer - either your own or a managed back end
+4. The Relayer verifies the signature against the Forwarding Contract
+5. If the meta-tx signature is valid, the Forwarding Contract **reverts** with an `OffchainLookup` error per EIP-3668
+6. The Relayer catches this error, and uses the error params to submit a request to the JSON RPC server (not a chain gateway, just a standard RPC API)
+7. The JSON RPC looks up the current L1 ownership for the requested NFT and on-chain authorizations, and returns a signed message proof encoding the address permitted to use the NFT
+8. The Relayer receives the proof, and submits a transaction to the Forwarding Contract with the proof and additional data from the `OffchainLookup` error args
+9. The Forwarding Contract executes the meta-tx only if the meta-tx signer owns or is authorized to use the NFT by its owner
 
 The SDK provides Javascript client function for generating ERC2771 signatures on behalf of a Transaction Signer and server side functions for your Relayer. The Solidity package includes a Forwarding contract and inheritable logic for your implementation contracts. An express-like JSON RPC server includes logic for providing the OffchainLookup proof.
 

@@ -33,7 +33,7 @@ async function fetchCurrentOwner(
 }
 
 async function generateProof({
-  from,
+  owner,
   nonce,
   nftContract,
   tokenId,
@@ -53,7 +53,7 @@ async function generateProof({
 
   const forwarder = new Contract(to, abi, ownershipSigner);
   const message = await forwarder.createMessage(
-    from,
+    owner,
     nonce,
     nftContract,
     tokenId,
@@ -64,7 +64,7 @@ async function generateProof({
 
 async function durinCall({ callData, to, abi }, _opt, callback) {
   // decode the callData
-  const { from, nonce, nftContract, tokenId } = decodeCalldata(callData);
+  const { nonce, nftContract, tokenId } = decodeCalldata(callData);
 
   // lookup current owner on mainnet
   let owner: string;
@@ -75,12 +75,9 @@ async function durinCall({ callData, to, abi }, _opt, callback) {
   }
 
   // return an error if the current owner does not match the from address
-  if (utils.getAddress(owner) !== utils.getAddress(from)) {
-    return callback(new rpc.Error.InternalError());
-  }
 
   const proof = await generateProof({
-    from,
+    owner,
     nonce,
     nftContract,
     tokenId,
