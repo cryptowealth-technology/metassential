@@ -29,7 +29,7 @@ contract SignedOwnershipProof {
         view
         returns (bytes32)
     {
-        // The JSON RPC server ascertains the current owner of the L1 NFT and calls this function.
+        // The JSON RPC server gets the current owner of the L1 NFT and calls this function.
         // This respects PlaySession authorizations - if the current L1 owner has authorized 
         // a Burner EOA to play games with its NFTs via createSession, and the sesssion is still
         // valid, the ownership proof will encode the authorized Burner address.

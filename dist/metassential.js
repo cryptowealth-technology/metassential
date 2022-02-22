@@ -3,7 +3,10 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var ethSigUtil = require('@metamask/eth-sig-util');
-var ethers = require('ethers');
+var bignumber = require('@ethersproject/bignumber');
+var contracts = require('@ethersproject/contracts');
+var providers = require('@ethersproject/providers');
+var address = require('@ethersproject/address');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -48,7 +51,10 @@ async function signTypedData(signer, from, data) {
       version: ethSigUtil__default["default"].SignTypedDataVersion.V4
     });
   }
-  return await signer.send("eth_signTypedData_v4", [from, JSON.stringify(data)]);
+  return await signer.send("eth_signTypedData_v4", [
+    from,
+    JSON.stringify(data)
+  ]);
 }
 async function attachNonce(forwarder, input) {
   const nonce = await forwarder.getNonce(input.from).then((nonce2) => nonce2.toString());
@@ -61,7 +67,7 @@ async function signMetaTxRequest(signer, chainId, input, forwarder) {
   return { signature, request };
 }
 
-async function sendMetaTx(data, to, walletProvider, network, readProvider, from, forwardingContract, creds, onSigned) {
+async function sendMetaTx(data, to, walletProvider, network, _readProvider, from, forwardingContract, creds, onSigned) {
   const url = process.env.AUTOTASK_URL;
   const request = await signMetaTxRequest(walletProvider, network, {
     to,
@@ -83,20 +89,20 @@ const ERC1155 = [
   "function balanceOf(address _owner, uint256 _id) external view returns (uint256)"
 ];
 const ERC721 = [
-  "function ownerOf(uint256 _id) external view returns (address)"
+  "function ownerOf(uint256 tokenId) external view returns (address)"
 ];
 async function ownerOf1155(contractAddress, tokenId, address, mainnetProvider) {
-  const nftContract = new ethers.Contract(contractAddress, ERC1155, mainnetProvider);
-  const balance = await nftContract.balanceOf(address, ethers.BigNumber.from(tokenId));
+  const nftContract = new contracts.Contract(contractAddress, ERC1155, mainnetProvider);
+  const balance = await nftContract.balanceOf(address, bignumber.BigNumber.from(tokenId));
   return balance.gt(0);
 }
-async function ownerOf721(contractAddress, tokenId, address, mainnetProvider) {
-  const nftContract = new ethers.Contract(contractAddress, ERC721, mainnetProvider);
-  const owner = await nftContract.ownerOf(ethers.BigNumber.from(tokenId));
-  return ethers.utils.getAddress(owner) === ethers.utils.getAddress(address);
+async function ownerOf721(contractAddress, tokenId, address$1, mainnetProvider) {
+  const nftContract = new contracts.Contract(contractAddress, ERC721, mainnetProvider);
+  const owner = await nftContract.ownerOf(bignumber.BigNumber.from(tokenId));
+  return address.getAddress(owner) === address.getAddress(address$1);
 }
 async function isOwner(contractAddress, tokenId, address, mainnetRpcUrl) {
-  const mainnetProvider = new ethers.providers.JsonRpcProvider(mainnetRpcUrl);
+  const mainnetProvider = new providers.JsonRpcProvider(mainnetRpcUrl);
   let _isOwner = false;
   try {
     _isOwner = await ownerOf721(contractAddress, tokenId, address, mainnetProvider);
@@ -106,9 +112,34 @@ async function isOwner(contractAddress, tokenId, address, mainnetRpcUrl) {
   return _isOwner;
 }
 
+const wrapContract = (signer, from, implementationContract, forwarder) => {
+  return Object.values(implementationContract.interface.functions).reduce((funcs, _func) => {
+    return {
+      ...funcs,
+      [_func.name]: async (...args) => {
+        if (_func.stateMutability === "nonpayable") {
+          const [nftContract, tokenId, authorizer] = args.splice(args.length - 3, 3);
+          const data = implementationContract.interface.encodeFunctionData(_func.name, args);
+          return signMetaTxRequest(signer, (await implementationContract.provider.getNetwork()).chainId, {
+            to: implementationContract.address,
+            from,
+            data,
+            nftContract,
+            tokenId,
+            authorizer
+          }, forwarder);
+        } else {
+          return implementationContract[_func.name](...args);
+        }
+      }
+    };
+  }, {});
+};
+
 exports.isOwner = isOwner;
 exports.ownerOf1155 = ownerOf1155;
 exports.ownerOf721 = ownerOf721;
 exports.sendMetaTx = sendMetaTx;
 exports.signMetaTxRequest = signMetaTxRequest;
+exports.wrapContract = wrapContract;
 //# sourceMappingURL=metassential.js.map

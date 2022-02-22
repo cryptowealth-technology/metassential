@@ -118,7 +118,7 @@ async function attachNonce(
 }
 
 async function signMetaTxRequest(
-  signer: Web3Provider | Provider,
+  signer: Web3Provider | Provider | string,
   chainId: number,
   input: Record<string, any>,
   forwarder: Contract,

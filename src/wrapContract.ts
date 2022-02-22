@@ -4,7 +4,7 @@ import { Web3Provider } from '@ethersproject/providers';
 import { signMetaTxRequest } from './signer';
 
 const wrapContract = (
-  signer: Provider | Web3Provider,
+  signer: Provider | Web3Provider | string,
   from: string,
   implementationContract: Contract,
   forwarder: Contract,

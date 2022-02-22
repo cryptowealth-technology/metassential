@@ -8,8 +8,7 @@
   "scripts": {
     "build": "rollup -c",
     "format": "prettier --config .prettierrc 'src/**/*.ts' --write",
-    "lint": "eslint '**/*.ts' --fix",
-    "deploy-rpc": "git subtree push --prefix server heroku main"
+    "lint": "eslint '**/*.ts' --fix"
   },
   "devDependencies": {
     "@types/node": "^17.0.14",
@@ -28,7 +27,6 @@
   "dependencies": {
     "@metamask/eth-sig-util": "^4.0.0",
     "ethers": "^5.5.4",
-    "json-rpc2": "^2.0.0",
     "ts-node": "^10.5.0"
   }
 }

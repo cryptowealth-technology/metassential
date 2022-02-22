@@ -3,22 +3,21 @@ import {
   DefenderRelaySigner,
 } from 'defender-relay-client/lib/ethers';
 import { Contract, utils } from 'ethers';
-import { Logger } from 'ethers/lib/utils';
 
-import Forwarder from '../../deployments/matic/WrasslersGasStation.json';
+import Forwarder from './abis/EssentialForwarder.json';
 
 async function preflight(forwarder: Contract, request: any, signature: string) {
   // Validate request on the forwarder contract
 
   try {
-    await forwarder.preflight(request, signature);
-    console.log('Preflight did not revert');
+    await forwarder.preflight(request, signature, {
+      gasLimit: utils.hexlify(2100000),
+      gasPrice: utils.parseUnits('50', 'gwei'),
+    });
   } catch (e) {
-    if (e.code === Logger.errors.CALL_EXCEPTION) {
-      // If the error was OffchainLookup(), we can get the args...
+    console.warn('CAUGHT', e);
+    if (e.code === utils.Logger.errors.CALL_EXCEPTION) {
       if (e.errorName === 'OffchainLookup') {
-        // error OffchainLookup(address sender, string[1] urls, bytes callData, bytes4 callbackFunction, bytes extraData);
-
         const args = {
           sender: e.args.sender,
           url: e.args.urls[0],
@@ -50,12 +49,11 @@ export async function handler(event: any) {
   if (!event.request || !event.request.body) throw new Error(`Missing payload`);
   const { request, signature } = event.request.body;
 
-  // Initialize Relayer provider and signer, and forwarder contract
+  // Initialize Relayer provider, signer and forwarder contract
   const credentials = { ...event };
   const provider = new DefenderRelayProvider(credentials);
-  const signer = new DefenderRelaySigner(credentials, provider, {
-    speed: 'fastest',
-  });
+  const signer = new DefenderRelaySigner(credentials, provider, {});
+
   const forwarder = new Contract(Forwarder.address, Forwarder.abi, signer);
 
   // Preflight transaction
@@ -71,14 +69,7 @@ export async function handler(event: any) {
     to: forwarder.address,
     data: utils.hexConcat([
       callbackFunction,
-      abi.encode(
-        [
-          'tuple(address from, address to, address nftContract, uint256 tokenId, uint256 value, uint256 gas, uint256 nonce, bytes data)',
-          'bytes',
-          'bytes',
-        ],
-        [request, extraData, proof],
-      ),
+      abi.encode(['bytes', 'bytes'], [proof, extraData]),
     ]),
   });
 
@@ -86,11 +77,18 @@ export async function handler(event: any) {
   return { txHash: tx.hash };
 }
 
+// Sample typescript type definitions
+type EnvInfo = {
+  API_KEY: string;
+  API_SECRET: string;
+};
+
 // To run locally (this code will not be executed in Autotasks)
 if (require.main === module) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   require('dotenv').config();
-  handler({})
+  const { API_KEY: apiKey, API_SECRET: apiSecret } = process.env as EnvInfo;
+  handler({ apiKey, apiSecret })
     .then(() => process.exit(0))
     .catch((error: Error) => {
       console.error(error);

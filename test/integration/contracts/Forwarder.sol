@@ -12,9 +12,8 @@ import './IForwardRequest.sol';
 /// @author 0xEssential
 /// @notice EIP-2771 based MetaTransaction Forwarding Contract with EIP-3668 OffchainLookup for cross-chain token gating
 /// @dev Allows a Relayer to submit meta-transactions that utilize an NFT (i.e. in a game) on behalf of EOAs. Transactions
-///      are only executed if the Relayer provides a signature from a trusted 0xEssential signer. The signature must include
-///      the current owner of the Layer 1 NFT being used, or an authorized Burner EOA if the owner has authorized the Burner
-///      to use its NFTs by creating a PlaySession on this contract.
+///      are only executed if the Relayer provides a signature from a trusted signer. The signature must include the current
+///      owner of the Layer 1 NFT being used, or a Burner EOA the owner has authorized to use its NFTs.
 ///
 ///      EssentialForwarder can be used to build Layer 2 games that use Layer 1 NFTs without bridging and with superior UX.
 ///      End users can specify a Burner EOA from their primary EOA, and then use that burner address to play games.
